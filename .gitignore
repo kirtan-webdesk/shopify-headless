@@ -3,6 +3,7 @@ node_modules
 /build
 /dist
 /public/build
+/.vercel
 /.mf
 .env
 .shopify
