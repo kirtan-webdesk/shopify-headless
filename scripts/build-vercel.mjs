@@ -54,15 +54,30 @@ const adapter = `import handler from './server.js';
 if (typeof globalThis.caches === 'undefined') {
   const store = new Map();
   const memoryCache = {
-    // Response bodies are one-time-read streams, so every cache hit must
-    // return a fresh clone -- returning the stored object directly caused
-    // "Body has already been used" on the second read of any cached entry.
+    // Vercel's Edge runtime isolates I/O objects (streams, Response bodies)
+    // per request -- reusing a Response captured under a different request's
+    // handler throws "Cannot perform I/O on behalf of a different request".
+    // .clone() doesn't help, since the clone still traces back to the same
+    // stream source. So we store only plain data (an ArrayBuffer + header
+    // list) and build a brand-new Response from it on every cache hit.
     match: async (req) => {
-      const cached = store.get(typeof req === 'string' ? req : req.url);
-      return cached ? cached.clone() : undefined;
+      const entry = store.get(typeof req === 'string' ? req : req.url);
+      if (!entry) return undefined;
+      return new Response(entry.body, {
+        status: entry.status,
+        statusText: entry.statusText,
+        headers: entry.headers,
+      });
     },
     put: async (req, res) => {
-      store.set(typeof req === 'string' ? req : req.url, res.clone());
+      const key = typeof req === 'string' ? req : req.url;
+      const body = await res.clone().arrayBuffer();
+      store.set(key, {
+        body,
+        status: res.status,
+        statusText: res.statusText,
+        headers: [...res.headers.entries()],
+      });
     },
     delete: async (req) => store.delete(typeof req === 'string' ? req : req.url),
   };
