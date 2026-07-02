@@ -54,7 +54,13 @@ const adapter = `import handler from './server.js';
 if (typeof globalThis.caches === 'undefined') {
   const store = new Map();
   const memoryCache = {
-    match: async (req) => store.get(typeof req === 'string' ? req : req.url),
+    // Response bodies are one-time-read streams, so every cache hit must
+    // return a fresh clone -- returning the stored object directly caused
+    // "Body has already been used" on the second read of any cached entry.
+    match: async (req) => {
+      const cached = store.get(typeof req === 'string' ? req : req.url);
+      return cached ? cached.clone() : undefined;
+    },
     put: async (req, res) => {
       store.set(typeof req === 'string' ? req : req.url, res.clone());
     },
