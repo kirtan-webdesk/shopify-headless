@@ -57,6 +57,12 @@ export async function createHydrogenRouterContext(
       cart: {
         queryFragment: CART_QUERY_FRAGMENT,
       },
+      customerAccount: {
+        // We're deployed on Vercel, not a Hydrogen tunnel or Oxygen domain,
+        // and the redirect_uri is already registered manually in the
+        // Customer Account API's Application setup in Shopify admin.
+        useCustomAuthDomain: true,
+      },
     },
     additionalContext,
   );
