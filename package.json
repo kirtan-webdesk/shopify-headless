@@ -7,7 +7,7 @@
   "scripts": {
     "build": "shopify hydrogen build --codegen",
     "vercel-build": "shopify hydrogen build --codegen && node scripts/build-vercel.mjs",
-    "dev": "shopify hydrogen dev --codegen",
+    "dev": "shopify hydrogen dev --codegen --customer-account-push",
     "preview": "shopify hydrogen preview --build",
     "lint": "eslint --no-error-on-unmatched-pattern .",
     "typecheck": "react-router typegen && tsc --noEmit",
